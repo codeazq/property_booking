@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Property {
+  id                  BigInt             @id @default(autoincrement())
+  name                String?
+  status              String             @default("ACTIVE")
+  propertyType        PropertyType       @relation(fields: [propertyTypeId], references: [id])
+  propertyTypeId      Int                @map("property_type_id")
+  area                Area?              @relation(fields: [areaId], references: [id])
+  areaId              BigInt?            @map("area_id")
+  address             String
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @default(now()) @updatedAt @map("updated_at")
+  accommodationType   AccommodationType? @relation(fields: [accommodationTypeId], references: [id])
+  accommodationTypeId Int?               @db.SmallInt
+  accommodation       Accommodation[]
+  facilities          PropertyFacility[]
+
+  @@map("properties")
+}
+
+model Country {
+  id        Int      @id @default(autoincrement()) @db.SmallInt
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  states    State[]
+
+  @@map("countries")
+}
+
+model State {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  country   Country  @relation(fields: [countryId], references: [id])
+  countryId Int      @map("country_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  cities    City[]
+
+  @@unique([countryId, name])
+  @@map("states")
+}
+
+model City {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  state     State    @relation(fields: [stateId], references: [id])
+  stateId   BigInt   @map("state_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  areas     Area[]
+
+  @@unique([stateId, name])
+  @@map("cities")
+}
+
+model Area {
+  id         BigInt     @id @default(autoincrement())
+  name       String
+  city       City       @relation(fields: [cityId], references: [id])
+  cityId     BigInt     @map("city_id")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @default(now()) @updatedAt @map("updated_at")
+  properties Property[]
+
+  @@unique([cityId, name])
+  @@map("areas")
+}
+
+model PropertyType {
+  id          Int        @id @default(autoincrement()) @db.SmallInt
+  name        String
+  description String
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @default(now()) @updatedAt @map("updated_at")
+  properties  Property[]
+
+  @@map("property_types")
+}
+
+model Accommodation {
+  id                  BigInt            @id @default(autoincrement())
+  name                String?
+  status              String            @default("ACTIVE")
+  accommodationType   AccommodationType @relation(fields: [accommodationTypeId], references: [id])
+  accommodationTypeId Int               @map("property_type_id")
+  property            Property          @relation(fields: [propertyId], references: [id])
+  propertyId          BigInt            @map("property_id")
+  images              Json
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @default(now()) @updatedAt @map("updated_at")
+
+  @@map("accommodations")
+}
+
+model AccommodationType {
+  id             Int             @id @default(autoincrement()) @db.SmallInt
+  name           String
+  description    String
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @default(now()) @updatedAt @map("updated_at")
+  properties     Property[]
+  accommodations Accommodation[]
+
+  @@map("accommodation_types")
+}
+
+model User {
+  id        BigInt     @id @default(autoincrement())
+  firstName String?    @map("first_name")
+  lastName  String?    @map("last_name")
+  email     String     @unique
+  password  String
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at")
+  bookings  Booking[]
+  UserRole  UserRole[]
+
+  @@map("users")
+}
+
+model Role {
+  id        Int        @id @default(autoincrement()) @db.SmallInt
+  firstName String?    @map("first_name")
+  lastName  String?    @map("last_name")
+  UserRole  UserRole[]
+}
+
+model UserRole {
+  id     BigInt @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id])
+  userId BigInt @map("user_id")
+
+  role   Role @relation(fields: [roleId], references: [id])
+  roleId Int  @map("role_id")
+}
+
+model Booking {
+  id        BigInt   @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    BigInt   @map("user_id")
+  start     DateTime
+  end       DateTime
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("bookings")
+}
+
+model Facility {
+  id          Int                @id @default(autoincrement()) @db.SmallInt
+  name        String
+  description String
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @default(now()) @updatedAt @map("updated_at")
+  properties  PropertyFacility[]
+
+  @@map("facilities")
+}
+
+model PropertyFacility {
+  id         BigInt   @id @default(autoincrement())
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId BigInt   @map("property_id")
+
+  facility   Facility @relation(fields: [facilityId], references: [id])
+  facilityId Int      @map("facility_id")
+}
